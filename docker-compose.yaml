@@ -21,6 +21,35 @@ services:
       retries: 3
       start_period: 10s
       timeout: 10s
+  
+  migrator:
+    image: locoapp:0.0.3
+    command: sh -c "cargo loco db migrate"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ./.env
+    networks:
+      - localprom
+    ports:
+      - '5150:5150'
+
+  locoapp:
+    image: locoapp:0.0.3
+    container_name: locoapp
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    env_file:
+      - ./.env
+    networks:
+      - localprom
+    ports:
+      - '5150:5150'
+    restart: on-failure
 
 volumes:
   postgresDB:
